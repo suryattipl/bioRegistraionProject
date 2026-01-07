@@ -154,26 +154,26 @@ $shiftResult = mysqli_query($con1, "SELECT id, exam_shifts FROM shifts");
                                 Please select at least one shift
                             </div>
                         </div>
-                        
+
                         <div class="mb-2">
-    <label class="form-label d-block">Same Candidates for both shifts?</label>
+                            <label class="form-label d-block">Same Candidates for both shifts?</label>
 
-    <div class="form-check form-check-inline">
-        <input class="form-check-input edit-same-candidates" type="radio"
-               name="same_candidates" value="1" id="edit_same_yes">
-        <label class="form-check-label" for="edit_same_yes">Yes</label>
-    </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input edit-same-candidates" type="radio"
+                                    name="same_candidates" value="1" id="edit_same_yes">
+                                <label class="form-check-label" for="edit_same_yes">Yes</label>
+                            </div>
 
-    <div class="form-check form-check-inline">
-        <input class="form-check-input edit-same-candidates" type="radio"
-               name="same_candidates" value="2" id="edit_same_no">
-        <label class="form-check-label" for="edit_same_no">No</label>
-    </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input edit-same-candidates" type="radio"
+                                    name="same_candidates" value="2" id="edit_same_no">
+                                <label class="form-check-label" for="edit_same_no">No</label>
+                            </div>
 
-    <div class="text-danger small d-none" id="editSameCandidatesError">
-        Please select Yes or No
-    </div>
-</div>
+                            <div class="text-danger small d-none" id="editSameCandidatesError">
+                                Please select Yes or No
+                            </div>
+                        </div>
 
 
                     </div>
@@ -250,6 +250,13 @@ $shiftResult = mysqli_query($con1, "SELECT id, exam_shifts FROM shifts");
                         title: "Evening Shift",
                         render: function(data) {
                             return data == 1 ? 'Yes' : 'No';
+                        }
+                    },
+                    {
+                        data : "same_candidates_in_shifts",
+                        title : "Same Candidates",
+                        render : function(data) {
+                            return data == 1 ? 'Yes' : (data == 2 ? 'No' : 'N/A');
                         }
                     },
                     {
@@ -352,11 +359,11 @@ $shiftResult = mysqli_query($con1, "SELECT id, exam_shifts FROM shifts");
 
                 $('.edit-same-candidates').prop('checked', false);
 
-    if (rowData.same_candidates == 1) {
-        $('#edit_same_yes').prop('checked', true);
-    } else if (rowData.same_candidates == 2) {
-        $('#edit_same_no').prop('checked', true);
-    }
+                if (rowData.same_candidates_in_shifts == 1) {
+                    $('#edit_same_yes').prop('checked', true);
+                } else if (rowData.same_candidates_in_shifts == 2) {
+                    $('#edit_same_no').prop('checked', true);
+                }
 
                 const modal = new bootstrap.Modal(
                     document.getElementById('editProjectModal')
@@ -376,7 +383,14 @@ $shiftResult = mysqli_query($con1, "SELECT id, exam_shifts FROM shifts");
                     valid = false;
                 }
 
-                if (!$('.'))
+                if(!$('.edit-same-candidates:checked').length) {
+                    $('#editSameCandidatesError').removeClass('d-none');
+                    valid = false;
+                } else {
+                    $('#editSameCandidatesError').addClass('d-none');
+                }
+                this.classList.add('was-validated');
+
 
                     if (!this.checkValidity() || !valid) return;
 

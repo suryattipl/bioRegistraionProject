@@ -82,7 +82,7 @@ switch ($action) {
 
 
 
-    case 'createProject':
+/*     case 'createProject':
         // echo $_POST;exit;
         if (
             empty($_POST['projectname']) ||
@@ -135,6 +135,7 @@ switch ($action) {
         );
 
         if ($stmt->execute()) {
+            
             echo json_encode([
                 "success" => true,
                 "message" => "Project updated successfully"
@@ -146,9 +147,104 @@ switch ($action) {
                 "message" => "Update failed"
             ]);
         }
-        break;
+        break; */
 
 
+case 'createProject':
+
+    if (
+        empty($_POST['projectname']) ||
+        empty($_POST['projectdate']) ||
+        empty($_POST['same_candidates']) ||
+        empty($_POST['shift_ids'])
+    ) {
+        http_response_code(400);
+        exit('Invalid input');
+    }
+
+    $projectname = trim($_POST['projectname']);
+    $projectdate = $_POST['projectdate'];
+    $shiftIds    = $_POST['shift_ids'];
+    $created_by  = $_POST['created_by'];
+    $same_candidates = $_POST['same_candidates'];
+
+    $morning_shift = 0;
+    $evening_shift = 0;
+
+    $shiftQuery = mysqli_query(
+        $con1,
+        "SELECT exam_shifts FROM shifts 
+         WHERE id IN (" . implode(',', array_map('intval', $shiftIds)) . ")"
+    );
+
+    while ($row = mysqli_fetch_assoc($shiftQuery)) {
+        if (strtolower($row['exam_shifts']) === 'morning') $morning_shift = 1;
+        if (strtolower($row['exam_shifts']) === 'evening') $evening_shift = 1;
+    }
+
+    $con1->begin_transaction();
+
+    try {
+
+        $stmt = $con1->prepare(
+            "INSERT INTO projects
+            (projectname, projectdates, morning_shift, evening_shift, same_candidates_in_shifts, created_by, create_date_time)
+            VALUES (?, ?, ?, ?, ?, ?, NOW())"
+        );
+
+        $stmt->bind_param(
+            "ssiiii",
+            $projectname,
+            $projectdate,
+            $morning_shift,
+            $evening_shift,
+            $same_candidates,
+            $created_by
+        );
+
+        if (!$stmt->execute()) {
+            throw new Exception("Project insert failed");
+        }
+
+        $project_id = $stmt->insert_id;
+
+        $candidateTable  = $project_id . "_candidate_details";
+        $biometricTable  = $project_id . "_biometric_registration";
+        $centerTable     = $project_id . "_center_counts";
+
+        $tables = [
+            $candidateTable  => "candidate_details",
+            $biometricTable  => "biometric_registration",
+            $centerTable     => "center_counts"
+        ];
+
+        foreach ($tables as $new => $base) {
+            $sql = "CREATE TABLE `$new` LIKE `$base`";
+            if (!$con1->query($sql)) {
+                throw new Exception("Failed creating table: $new");
+            }
+        }
+
+        $con1->commit();
+
+        echo json_encode([
+            "success" => true,
+            "project_id" => $project_id,
+            "message" => "Project and 3 tables created successfully"
+        ]);
+
+    } catch (Exception $e) {
+
+        $con1->rollback();
+
+        http_response_code(500);
+        echo json_encode([
+            "success" => false,
+            "message" => $e->getMessage()
+        ]);
+    }
+
+break;
 
 
 
@@ -158,6 +254,7 @@ switch ($action) {
             empty($_POST['id']) ||
             empty($_POST['projectname']) ||
             empty($_POST['projectdate']) ||
+            empty($_POST['same_candidates']) ||
             empty($_POST['shift_ids'])
         ) {
             http_response_code(400);
@@ -168,7 +265,7 @@ switch ($action) {
         $projectname = trim($_POST['projectname']);
         $projectdate = $_POST['projectdate'];
         $shiftIds    = $_POST['shift_ids']; 
-
+        $same_candidates_in_shifts = $_POST['same_candidates'];
         $morning_shift = 0;
         $evening_shift = 0;
 
@@ -193,15 +290,16 @@ switch ($action) {
 
             $stmt = $con1->prepare(
                 "UPDATE projects 
-         SET projectname=?, projectdates=?, morning_shift=?, evening_shift=? 
+         SET projectname=?, projectdates=?, morning_shift=?, evening_shift=?, same_candidates_in_shifts=?
          WHERE id=?"
             );
             $stmt->bind_param(
-                "ssiii",
+                "ssiiii",
                 $projectname,
                 $projectdate,
                 $morning_shift,
                 $evening_shift,
+                $same_candidates_in_shifts,
                 $id
             );
             $stmt->execute();

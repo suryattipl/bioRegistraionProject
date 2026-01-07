@@ -18,10 +18,10 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             </a>
         </li>
 
-        <li class="<?= $currentPage == 'profile.php' ? 'active' : '' ?>">
-            <a href="profile.php">
+        <li class="<?= $currentPage == 'candidates.php' ? 'active' : '' ?>">
+            <a href="candidates.php">
                 <i class="bi bi-person"></i>
-                Profile
+                Candidates
             </a>
         </li>
     </ul>
